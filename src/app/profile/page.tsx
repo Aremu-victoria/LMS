@@ -2,12 +2,29 @@
 import { gql } from 'graphql-tag';
 import { useQuery } from '@apollo/client/react';
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  matricNumber?: string;
+  department?: string;
+  level?: string;
+  faculty?: string;
+  specialization?: string;
+  phone?: string;
+}
+
+interface MeQueryResponse {
+  me: User;
+}
+
 const ME = gql`
   query Me { me { id name email role matricNumber department level faculty specialization phone } }
 `;
 
 export default function ProfilePage() {
-  const { data } = useQuery(ME);
+  const { data } = useQuery<MeQueryResponse>(ME);
   const u = data?.me;
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
