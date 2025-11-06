@@ -192,9 +192,13 @@ const resolvers = {
 			_: unknown,
 			{ name, email, password, role, matricNumber, department, level, faculty, specialization, phone }: { name: string; email: string; password: string; role: 'teacher' | 'student'; matricNumber?: string; department?: string; level?: string; faculty?: string; specialization?: string; phone?: string }
 		) => {
+			console.log('[graphql] signup called', { email, role });
 			await connectToDatabase();
 			const existing = await User.findOne({ email });
-			if (existing) throw new Error('Email already in use');
+			if (existing) {
+				console.log('[graphql] signup failed - email exists', email);
+				throw new Error('Email already in use');
+			}
 			const passwordHash = await bcrypt.hash(password, 10);
 			const userData: Partial<IUser> & { passwordHash: string } = { name, email, role, passwordHash };
 			if (role === 'student') {
@@ -208,6 +212,7 @@ const resolvers = {
 				if (phone) userData.phone = phone;
 			}
 			const user = await User.create(userData);
+			console.log('[graphql] signup success', { id: user._id?.toString?.() });
 			return user;
 		},
 		createCourse: async (_: unknown, { input }: { input: any }, ctx: Context) => {

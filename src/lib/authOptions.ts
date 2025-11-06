@@ -33,33 +33,61 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        await connectToDatabase();
-        const user = await User.findOne({ email: credentials.email });
-        if (!user) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) return null;
-        return {
-          id: String(user._id),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+        console.log('[auth] authorize called for', credentials?.email);
+        if (!credentials?.email || !credentials?.password) {
+          console.log('[auth] authorize missing credentials');
+          return null;
+        }
+        try {
+          await connectToDatabase();
+          const user = await User.findOne({ email: credentials.email });
+          if (!user) {
+            console.log('[auth] authorize user not found', credentials.email);
+            return null;
+          }
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) {
+            console.log('[auth] authorize invalid password for', credentials.email);
+            return null;
+          }
+          console.log('[auth] authorize success for', credentials.email);
+          return {
+            id: String(user._id),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (err) {
+          console.error('[auth] authorize error', err);
+          throw err;
+        }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as any).role;
+      try {
+        if (user) {
+          console.log('[auth] jwt callback adding role from user', (user as any).role);
+          token.role = (user as any).role;
+        }
+        return token;
+      } catch (err) {
+        console.error('[auth] jwt callback error', err);
+        throw err;
       }
-      return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
-        (session.user as any).role = token.role as any;
+      try {
+        if (session?.user) {
+          (session.user as any).role = token.role as any;
+        }
+        console.log('[auth] session callback produced session for', (session?.user as any)?.email || null);
+        return session;
+      } catch (err) {
+        console.error('[auth] session callback error', err);
+        throw err;
       }
-      return session;
     },
   },
 };

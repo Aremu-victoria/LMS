@@ -2,13 +2,14 @@ import { createYoga } from 'graphql-yoga';
 import { schema } from '../../../graphql/schema';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/authOptions';
+import { authOptions } from '../../../lib/authOptions';
 
 const yoga = createYoga({
 	schema,
 	graphqlEndpoint: '/api/graphql',
 	context: async () => {
 		const session = await getServerSession(authOptions);
+		console.log('[graphql] context session for', session?.user?.email || null);
 		return { session };
 	},
 });
